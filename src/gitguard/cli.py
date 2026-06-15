@@ -549,11 +549,12 @@ def ai_providers() -> None:
 
 
 @main.command()
-@click.option("--provider", "-p", type=click.Choice(["openai", "anthropic", "google", "groq", "ollama", "together", "fireworks", "deepseek", "azure", "local"]), help="AI provider")
-@click.option("--model", "-m", help="Model name")
+@click.option("--provider", "-p", help="AI provider (openai, anthropic, google, groq, ollama, mistral, openrouter, etc.)")
+@click.option("--model", "-m", help="Model name (custom names supported, e.g. 'my-finetuned-model')")
 @click.option("--api-key", "-k", help="API key (optional, can use env var)")
+@click.option("--base-url", "-u", help="Custom base URL for API endpoint")
 @click.option("--enabled", "-e", is_flag=True, help="Enable AI features")
-def ai_config(provider: str | None, model: str | None, api_key: str | None, enabled: bool) -> None:
+def ai_config(provider: str | None, model: str | None, api_key: str | None, base_url: str | None, enabled: bool) -> None:
     """Configure AI settings for code review and explanations."""
     config = get_config()
     reset_config()
@@ -564,6 +565,8 @@ def ai_config(provider: str | None, model: str | None, api_key: str | None, enab
         config.ai.model = model
     if api_key:
         config.ai.api_key = api_key
+    if base_url:
+        config.ai.base_url = base_url
     if enabled:
         config.ai.enabled = True
 
