@@ -19,7 +19,7 @@ from gitguard.core.models import ReviewResult, Severity
 from gitguard.core.reviewer import CodeReviewer
 from gitguard.core.rules import RuleEngine
 from gitguard.core.scanner import SecurityScanner
-from gitguard.utils.config import get_config
+from gitguard.utils.config import get_config, reset_config
 from gitguard.utils.git import get_repo_root, get_staged_diff
 from gitguard.utils.output import OutputFormatter
 from gitguard.utils.sarif import SARIFFormatter
@@ -506,6 +506,117 @@ def nvd(path: str, output: str | None) -> None:
             console.print(f"  [{color}]{finding.message}[/{color}]")
             if finding.suggestion:
                 console.print(f"    [green]{finding.suggestion}[/green]")
+
+
+@main.command()
+def ai_providers() -> None:
+    """List supported AI providers and models."""
+    from gitguard.core.ai_reviewer import AIReviewer
+
+    providers = AIReviewer.list_providers()
+
+    table = Table(title="Supported AI Providers")
+    table.add_column("Provider", style="cyan")
+    table.add_column("Models")
+    table.add_column("Env Variable")
+    table.add_column("Setup")
+
+    for provider_id, info in providers.items():
+        models = ", ".join(info["models"][:3])
+        if len(info["models"]) > 3:
+            models += f" (+{len(info['models']) - 3} more)"
+
+        env_key = info.get("env_key", "")
+        if env_key:
+            setup = f"export {env_key}=your-key"
+        elif provider_id in ("ollama", "local"):
+            setup = "No key needed (local)"
+        else:
+            setup = "Add to .gitguard.json"
+
+        table.add_row(info["name"], models, env_key or "N/A", setup)
+
+    console.print(table)
+    console.print("\n[dim]Configure in .gitguard.json:[/dim]")
+    console.print("""{
+  "ai": {
+    "enabled": true,
+    "provider": "openai",
+    "model": "gpt-4",
+    "api_key": "sk-..." (optional, can use env var)
+  }
+}""")
+
+
+@main.command()
+@click.option("--provider", "-p", type=click.Choice(["openai", "anthropic", "google", "groq", "ollama", "together", "fireworks", "deepseek", "azure", "local"]), help="AI provider")
+@click.option("--model", "-m", help="Model name")
+@click.option("--api-key", "-k", help="API key (optional, can use env var)")
+@click.option("--enabled", "-e", is_flag=True, help="Enable AI features")
+def ai_config(provider: str | None, model: str | None, api_key: str | None, enabled: bool) -> None:
+    """Configure AI settings for code review and explanations."""
+    config = get_config()
+    reset_config()
+
+    if provider:
+        config.ai.provider = provider
+    if model:
+        config.ai.model = model
+    if api_key:
+        config.ai.api_key = api_key
+    if enabled:
+        config.ai.enabled = True
+
+    if not config.ai.model and provider:
+        from gitguard.core.ai_reviewer import AIReviewer
+        models = AIReviewer.list_models(provider)
+        if models:
+            config.ai.model = models[0]
+
+    config_path = Path(".gitguard.json")
+    config_data = json.loads(config_path.read_text()) if config_path.exists() else {}
+    config_data["ai"] = config.ai.to_dict()
+    config_path.write_text(json.dumps(config_data, indent=2))
+
+    formatter.print_success(f"AI configured: {config.ai.provider}/{config.ai.model}")
+    if config.ai.api_key:
+        formatter.print_success("API key saved to .gitguard.json")
+    else:
+        env_key = {"openai": "OPENAI_API_KEY", "anthropic": "ANTHROPIC_API_KEY", "google": "GOOGLE_API_KEY"}.get(config.ai.provider, "")
+        if env_key:
+            console.print(f"[dim]Or set environment variable: export {env_key}=your-key[/dim]")
+
+
+@main.command()
+def ai_status() -> None:
+    """Show current AI configuration status."""
+
+    config = get_config()
+    ai = config.ai
+
+    table = Table(title="AI Configuration")
+    table.add_column("Setting", style="cyan")
+    table.add_column("Value")
+
+    table.add_row("Enabled", "[green]Yes[/green]" if ai.enabled else "[red]No[/red]")
+    table.add_row("Provider", ai.provider)
+    table.add_row("Model", ai.model)
+
+    api_key = ai.get_api_key()
+    if api_key:
+        masked = api_key[:8] + "..." + api_key[-4:] if len(api_key) > 12 else "***"
+        table.add_row("API Key", f"[green]{masked}[/green]")
+    else:
+        table.add_row("API Key", "[red]Not configured[/red]")
+
+    table.add_row("Base URL", ai.get_base_url())
+    table.add_row("Max Tokens", str(ai.max_tokens))
+
+    console.print(table)
+
+    if not ai.enabled:
+        console.print("\n[yellow]AI features disabled. Run:[/yellow]")
+        console.print("  gitguard ai-config --enabled --provider openai")
 
 
 if __name__ == "__main__":

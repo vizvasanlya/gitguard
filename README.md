@@ -244,8 +244,54 @@ Create `.gitguard.json` in your project root:
   "include_license_check": true,
   "include_dependency_audit": true,
   "ignore_dirs": ["node_modules", ".git", "__pycache__"],
-  "allowed_licenses": ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC"]
+  "allowed_licenses": ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC"],
+
+  "ai": {
+    "enabled": true,
+    "provider": "openai",
+    "model": "gpt-4",
+    "api_key": "sk-... (optional, can use env var)"
+  },
+
+  "notifications": {
+    "enabled": true,
+    "slack_webhook": "https://hooks.slack.com/services/...",
+    "discord_webhook": "https://discord.com/api/webhooks/...",
+    "notify_on": "high"
+  }
 }
+```
+
+### AI Configuration
+
+GitGuard supports 10 AI providers:
+
+| Provider | Models | Env Variable |
+|----------|--------|--------------|
+| OpenAI | gpt-4, gpt-4o, gpt-4-turbo | `OPENAI_API_KEY` |
+| Anthropic | claude-3-opus, claude-3-sonnet, claude-3.5-sonnet | `ANTHROPIC_API_KEY` |
+| Google | gemini-1.5-pro, gemini-1.5-flash | `GOOGLE_API_KEY` |
+| Groq | llama-3-70b, mixtral-8x7b | `GROQ_API_KEY` |
+| Ollama | llama3, codellama, mistral (local) | No key needed |
+| Together AI | llama-3-70b, mixtral | `TOGETHER_API_KEY` |
+| Fireworks AI | llama-v3-70b, mixtral | `FIREWORKS_API_KEY` |
+| DeepSeek | deepseek-chat, deepseek-coder | `DEEPSEEK_API_KEY` |
+| Azure OpenAI | gpt-4, gpt-35-turbo | `AZURE_OPENAI_API_KEY` |
+| Local | Any (LM Studio, llama.cpp) | No key needed |
+
+Quick setup:
+```bash
+# OpenAI
+gitguard ai-config --enabled --provider openai --model gpt-4
+
+# Anthropic
+gitguard ai-config --enabled --provider anthropic --model claude-3-sonnet
+
+# Ollama (local, free)
+gitguard ai-config --enabled --provider ollama --model llama3
+
+# Check status
+gitguard ai-status
 ```
 
 ## CI/CD Integration

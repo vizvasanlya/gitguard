@@ -1,0 +1,29 @@
+{
+  "severity_threshold": "low",
+  "include_secrets": true,
+  "include_vulnerabilities": true,
+  "include_bad_patterns": true,
+  "include_license_check": true,
+  "include_dependency_audit": true,
+  "ignore_dirs": ["node_modules", ".git", "__pycache__", ".venv", "venv", "dist", "build"],
+  "ignore_files": ["*.pyc", "*.pyo", "*.pyd", "*.so", "*.dylib"],
+  "allowed_licenses": ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Unlicense"],
+  "auto_install_hooks": false,
+
+  "ai": {
+    "enabled": false,
+    "provider": "openai",
+    "model": "gpt-4",
+    "api_key": "",
+    "base_url": "",
+    "max_tokens": 4000,
+    "temperature": 0.3
+  },
+
+  "notifications": {
+    "enabled": false,
+    "slack_webhook": "",
+    "discord_webhook": "",
+    "notify_on": "high"
+  }
+}
