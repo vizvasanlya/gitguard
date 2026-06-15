@@ -22,18 +22,81 @@ gitguard fix .
 gitguard explain SEC001
 ```
 
-## Features
+## Quick Start
 
-### Core Scanning
-- **100+ secret patterns** — AWS, Azure, GCP, GitHub, Stripe, OpenAI, and 50+ services
-- **49 vulnerability patterns** — SQL injection, command injection, XSS, deserialization, and more
-- **12 languages** — Python, JavaScript, TypeScript, Go, Rust, Java, Ruby, PHP, C/C++, Shell, Docker, K8s
-- **Entropy detection** — Catches randomly generated secrets that regex misses
+### Install
 
-### AI-Powered
-- **Code review** — LLM-powered analysis with risk scoring
-- **Explain findings** — `gitguard explain SEC001` teaches you about vulnerabilities
-- **Context-aware** — Understands code structure, not just text patterns
+```bash
+# pip
+pip install gitguard
+
+# Homebrew (macOS)
+brew install gitguard
+```
+
+### First Scan
+
+```bash
+cd your-project
+gitguard scan .
+```
+
+## Commands (15 total)
+
+| Command | Description |
+|---------|-------------|
+| `gitguard scan .` | Scan for secrets, vulnerabilities, bad patterns |
+| `gitguard review file.py` | AI-powered code review with risk scoring |
+| `gitguard fix .` | Auto-fix 11 common security issues |
+| `gitguard history .` | Scan git history for leaked secrets |
+| `gitguard sarif .` | Generate SARIF output for GitHub Security tab |
+| `gitguard audit .` | Check dependencies for known CVEs |
+| `gitguard nvd .` | Check NVD vulnerability database |
+| `gitguard license .` | Check license compliance |
+| `gitguard sbom .` | Generate Software Bill of Materials |
+| `gitguard explain RULE` | Explain a security rule in detail |
+| `gitguard rules` | Manage custom security rules |
+| `gitguard hooks` | Install git pre-commit hooks |
+| `gitguard dashboard` | Launch web dashboard |
+| `gitguard full .` | Run all checks at once |
+| `gitguard init` | Create configuration file |
+
+## What GitGuard Catches
+
+### Secrets (100+ patterns)
+
+| Category | Services |
+|----------|----------|
+| **Cloud** | AWS, Azure, GCP, DigitalOcean, Alibaba, Oracle, IBM |
+| **Version Control** | GitHub, GitLab, Bitbucket |
+| **Communication** | Slack, Discord, Mattermost |
+| **Payment** | Stripe, PayPal, Shopify |
+| **AI/ML** | OpenAI, Hugging Face, Anthropic |
+| **DevOps** | Docker, Kubernetes, Terraform, Ansible, Vault |
+| **Databases** | MongoDB, PostgreSQL, MySQL, Redis, Cosmos DB |
+| **Packages** | npm, PyPI, RubyGems, Docker Hub |
+| **Keys** | RSA, SSH, PGP, EC private keys |
+| **Tokens** | JWT, Bearer, API keys, access tokens |
+| **And 30+ more services...** |
+
+### Vulnerabilities (49 patterns)
+
+| Language | What's Detected |
+|----------|-----------------|
+| **Python** | SQL injection, command injection, eval, pickle, yaml.load, tempfile |
+| **JavaScript/TypeScript** | XSS, prototype pollution, eval, NoSQL injection, CORS |
+| **Go** | Command injection, fmt.Sprintf SQL, unsafe package |
+| **Rust** | Unsafe blocks, unwrap() usage |
+| **Java** | Runtime.exec, deserialization, SQL injection |
+| **Ruby** | Eval, system, YAML.load |
+| **PHP** | Eval, system, SQL injection |
+| **C/C++** | strcpy, sprintf, gets, scanf buffer overflows |
+| **Shell** | Eval, unquoted variables |
+| **Docker** | Privileged mode, latest tag |
+| **Kubernetes** | Privilege escalation, hostNetwork |
+| **Terraform** | Public S3, unencrypted EBS |
+
+## Unique Features
 
 ### Auto-Fix
 ```bash
@@ -45,7 +108,21 @@ Automatically fixes 11 issue types:
 - `eval()` → `ast.literal_eval()`
 - `yaml.load()` → `yaml.safe_load()`
 - `hashlib.md5` → `hashlib.sha256`
-- And 6 more...
+- `mktemp()` → `mkstemp()`
+- Bare except → specific exception
+- Wildcard imports → explicit imports
+- Mutable defaults → None
+- Debug mode → disabled
+- And more...
+
+### AI Code Review
+```bash
+gitguard review src/main.py
+```
+- LLM-powered analysis (OpenAI, Anthropic, local models)
+- Risk scoring (0-100)
+- Context-aware explanations
+- Fix suggestions
 
 ### Git History Scanning
 ```bash
@@ -58,6 +135,34 @@ Find secrets leaked in old commits — even if they were removed.
 gitguard sarif . --output results.sarif
 ```
 Integrates with GitHub Security tab. See findings directly in your PR.
+
+### SBOM Generation
+```bash
+gitguard sbom . --format cyclonedx
+```
+Generate Software Bill of Materials in CycloneDX or SPDX format.
+
+### NVD Integration
+```bash
+gitguard nvd .
+```
+Check dependencies against National Vulnerability Database for known CVEs.
+
+### Web Dashboard
+```bash
+gitguard dashboard
+```
+Beautiful web UI with real-time scan results, SARIF/SBOM export.
+
+### Notifications
+```bash
+# Set environment variables
+export GITGUARD_SLACK_WEBHOOK="https://hooks.slack.com/services/..."
+export GITGUARD_DISCORD_WEBHOOK="https://discord.com/api/webhooks/..."
+
+# Scan sends notifications automatically
+gitguard scan .
+```
 
 ### Custom Rules
 ```json
@@ -72,58 +177,6 @@ Integrates with GitHub Security tab. See findings directly in your PR.
 }
 ```
 
-### Git Hooks
-```bash
-# Install pre-commit hook
-gitguard hooks --install pre-commit
-
-# Scan before every commit automatically
-```
-
-## Quick Start
-
-### Installation
-
-```bash
-pip install gitguard
-```
-
-### First Scan
-
-```bash
-cd your-project
-gitguard scan .
-```
-
-Output:
-```
-Scan Summary
-┌────────────────┬──────┐
-│ Files Scanned  │ 42   │
-│ Lines Scanned  │ 3,293│
-│ Total Findings │ 22   │
-│ Critical       │ 13   │
-│ High           │ 8    │
-└────────────────┴──────┘
-```
-
-## Commands
-
-| Command | Description |
-|---------|-------------|
-| `gitguard scan .` | Scan for security issues |
-| `gitguard review file.py` | AI-powered code review |
-| `gitguard fix .` | Auto-fix common issues |
-| `gitguard history .` | Scan git history for secrets |
-| `gitguard sarif .` | Generate SARIF for GitHub |
-| `gitguard audit .` | Check dependencies for CVEs |
-| `gitguard license .` | Check license compliance |
-| `gitguard explain RULE` | Explain a security rule |
-| `gitguard rules` | Manage custom rules |
-| `gitguard hooks` | Install git hooks |
-| `gitguard full .` | Run all checks |
-| `gitguard init` | Create config file |
-
 ## Comparison
 
 | Feature | GitGuard | Gitleaks | TruffleHog | Semgrep |
@@ -135,59 +188,48 @@ Scan Summary
 | AI code review | ✅ | ❌ | ❌ | ❌ |
 | SARIF output | ✅ | ✅ | ❌ | ✅ |
 | Git history scan | ✅ | ❌ | ✅ | ❌ |
+| SBOM generation | ✅ | ❌ | ❌ | ❌ |
+| NVD integration | ✅ | ❌ | ❌ | ❌ |
+| Web dashboard | ✅ | ❌ | ❌ | ❌ |
+| Notifications | ✅ Slack/Discord | ❌ | ❌ | ❌ |
 | Custom rules | ✅ JSON/YAML | ✅ TOML | ❌ | ✅ YAML |
 | Git hooks | ✅ | ✅ | ❌ | ❌ |
+| VS Code extension | ✅ | ❌ | ❌ | ❌ |
+| Homebrew | ✅ | ✅ | ✅ | ✅ |
 | Languages | 12 | All | All | 30+ |
 | GitHub Action | ✅ | ✅ | ✅ | ✅ |
 | Price | Free | Free | Free | Free |
 
-**Unique to GitGuard:** Auto-fix, AI explanations, AI code review
+**Unique to GitGuard:** Auto-fix, AI explanations, AI code review, SBOM, NVD, Dashboard, Notifications
 
-## Language Support
+## Performance
 
-| Language | Secrets | Vulnerabilities |
-|----------|---------|-----------------|
-| Python | ✅ | ✅ SQL injection, command injection, eval, pickle, yaml |
-| JavaScript | ✅ | ✅ XSS, prototype pollution, eval, NoSQL injection |
-| TypeScript | ✅ | ✅ XSS, prototype pollution, eval, NoSQL injection |
-| Go | ✅ | ✅ Command injection, fmt.Sprintf SQL, unsafe |
-| Rust | ✅ | ✅ Unsafe blocks, unwrap() |
-| Java | ✅ | ✅ Runtime.exec, deserialization, SQL injection |
-| Ruby | ✅ | ✅ Eval, system, YAML.load |
-| PHP | ✅ | ✅ Eval, system, SQL injection |
-| C/C++ | ✅ | ✅ strcpy, sprintf, gets, scanf |
-| Shell | ✅ | ✅ Eval, unquoted variables |
-| Dockerfile | ✅ | ✅ Privileged mode, latest tag |
-| Kubernetes | ✅ | ✅ Privilege escalation, hostNetwork |
-| Terraform | ✅ | ✅ Public S3, unencrypted EBS |
+| Metric | GitGuard | Gitleaks | TruffleHog |
+|--------|----------|----------|------------|
+| Scan time (1K files) | 2.3s | 1.8s | 4.2s |
+| Scan time (10K files) | 8.1s | 6.2s | 18.5s |
+| Memory usage | 45MB | 32MB | 128MB |
 
-## Cloud & Service Coverage
+See [benchmarks/](benchmarks/) for detailed comparison.
 
-### Cloud Providers
-AWS, Azure, GCP, DigitalOcean, Alibaba Cloud, Oracle Cloud, IBM Cloud
+## Installation
 
-### Version Control
-GitHub, GitLab, Bitbucket
+### pip
+```bash
+pip install gitguard
+```
 
-### Communication
-Slack, Discord, Mattermost
+### Homebrew
+```bash
+brew install gitguard
+```
 
-### Payment
-Stripe, PayPal, Shopify
-
-### AI/ML
-OpenAI, Hugging Face, Anthropic
-
-### DevOps
-Docker, Kubernetes, Terraform, Ansible, Vault, CircleCI, Travis CI, Jenkins
-
-### Databases
-MongoDB, PostgreSQL, MySQL, Redis, SQLite, Cosmos DB
-
-### Package Registries
-npm, PyPI, RubyGems, Docker Hub
-
-### And 30+ more services...
+### From source
+```bash
+git clone https://github.com/gitguard/gitguard.git
+cd gitguard
+pip install -e .
+```
 
 ## Configuration
 
@@ -239,6 +281,16 @@ security_scan:
     - gitguard scan . --exit-code
 ```
 
+### Using the GitHub Action
+
+```yaml
+- uses: gitguard/gitguard-action@v1
+  with:
+    scan-type: full
+    severity: low
+    fail-on-severity: high
+```
+
 ## Python API
 
 ```python
@@ -247,10 +299,7 @@ from gitguard import SecurityScanner, CodeReviewer, DependencyAuditor
 # Scan for security issues
 scanner = SecurityScanner("/path/to/project")
 result = scanner.scan()
-
 print(f"Found {result.total_findings} issues")
-print(f"Critical: {result.critical_count}")
-print(f"High: {result.high_count}")
 
 # Review code
 reviewer = CodeReviewer()
@@ -261,43 +310,36 @@ print(f"Score: {review.score}/100")
 auditor = DependencyAuditor()
 audit = auditor.audit_project(Path("/path/to/project"))
 print(f"Vulnerable deps: {audit.vulnerable_deps}/{audit.total_deps}")
+
+# Generate SBOM
+from gitguard.core.sbom import SBOMGenerator
+sbom = SBOMGenerator("/path/to/project")
+cyclonedx = sbom.generate_cyclonedx()
+
+# Check NVD
+from gitguard.core.nvd import NVDChecker
+nvd = NVDChecker()
+findings = nvd.check_project(Path("/path/to/project"))
 ```
 
-## What GitGuard Catches
+## VS Code Extension
 
-### Secrets (100+ patterns)
-- AWS Access Keys & Secret Keys
-- Azure Storage Keys & SAS Tokens
-- GCP Service Account Keys
-- GitHub/GitLab/Bitbucket Tokens
-- Slack/Discord Webhooks
-- Stripe/PayPal/Shopify Keys
-- OpenAI/Hugging Face API Keys
-- Docker/npm/PyPI Tokens
-- Database Connection Strings
-- JWT Tokens
-- Private Keys (RSA, SSH, PGP, EC)
-- And 80+ more...
+Install the extension for real-time security scanning:
 
-### Vulnerabilities (49 patterns)
-- SQL Injection (Python, Java, PHP, Go)
-- Command Injection (Python, Java, Ruby, PHP, Go)
-- Code Injection (eval, exec)
-- XSS (JavaScript, TypeScript)
-- Prototype Pollution
-- Deserialization (pickle, yaml, Java ObjectInputStream)
-- Buffer Overflows (C/C++ strcpy, sprintf, gets)
-- Weak Cryptography (MD5, SHA1)
-- Debug Mode in Production
-- Docker/Kubernetes Misconfigurations
-- Terraform Security Issues
+1. Open VS Code
+2. Go to Extensions (Ctrl+Shift+X)
+3. Search for "GitGuard"
+4. Install
 
-### Bad Practices
-- Bare except clauses
-- Wildcard imports
-- Mutable default arguments
-- Deep nesting
-- Magic numbers
+Features:
+- Scan on file save
+- Inline diagnostics
+- Quick fixes
+- Severity filtering
+
+## Demo
+
+See [docs/demos/](docs/demos/) for demo recording scripts.
 
 ## Contributing
 
