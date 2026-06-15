@@ -1,4 +1,7 @@
+from .ai_reviewer import AIReviewer
 from .auditor import DependencyAuditor
+from .autofix import AutoFixer
+from .history import HistoryScanner
 from .hooks import GitHooksManager
 from .license import LicenseChecker
 from .models import (
@@ -11,6 +14,7 @@ from .models import (
     Severity,
 )
 from .reviewer import CodeReviewer
+from .rules import RuleEngine
 from .scanner import SecurityScanner
 
 __all__ = [
@@ -19,6 +23,10 @@ __all__ = [
     "DependencyAuditor",
     "LicenseChecker",
     "GitHooksManager",
+    "HistoryScanner",
+    "RuleEngine",
+    "AutoFixer",
+    "AIReviewer",
     "Finding",
     "Severity",
     "FindingType",

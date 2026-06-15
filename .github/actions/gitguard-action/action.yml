@@ -1,0 +1,137 @@
+name: "GitGuard Security Scan"
+description: "AI-powered git security scanner and code review toolkit"
+
+inputs:
+  path:
+    description: "Path to scan"
+    required: false
+    default: "."
+  severity:
+    description: "Minimum severity threshold (critical, high, medium, low, info)"
+    required: false
+    default: "low"
+  scan-type:
+    description: "Type of scan (scan, review, audit, full)"
+    required: false
+    default: "full"
+  output-format:
+    description: "Output format (sarif, json, table)"
+    required: false
+    default: "sarif"
+  fail-on-severity:
+    description: "Fail action if finding at this severity or higher"
+    required: false
+    default: ""
+  ai-review:
+    description: "Enable AI-powered code review"
+    required: false
+    default: "false"
+
+outputs:
+  findings:
+    description: "Number of findings found"
+    value: ${{ steps.scan.outputs.findings }}
+  critical:
+    description: "Number of critical findings"
+    value: ${{ steps.scan.outputs.critical }}
+  high:
+    description: "Number of high findings"
+    value: ${{ steps.scan.outputs.high }}
+  sarif-file:
+    description: "Path to SARIF output file"
+    value: ${{ steps.scan.outputs.sarif-file }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install GitGuard
+      shell: bash
+      run: pip install gitguard
+
+    - name: Run GitGuard Scan
+      id: scan
+      shell: bash
+      run: |
+        OUTPUT_FILE="gitguard-results.sarif"
+        EXIT_CODE=0
+
+        if [ "${{ inputs.scan-type }}" = "full" ]; then
+          gitguard full "${{ inputs.path }}" \
+            --severity "${{ inputs.severity }}" \
+            --output "$OUTPUT_FILE" \
+            --format sarif || EXIT_CODE=$?
+        elif [ "${{ inputs.scan-type }}" = "scan" ]; then
+          gitguard scan "${{ inputs.path }}" \
+            --severity "${{ inputs.severity }}" \
+            --output "$OUTPUT_FILE" \
+            --format sarif || EXIT_CODE=$?
+        elif [ "${{ inputs.scan-type }}" = "review" ]; then
+          gitguard review "${{ inputs.path }}" \
+            --output "$OUTPUT_FILE" \
+            --format sarif || EXIT_CODE=$?
+        elif [ "${{ inputs.scan-type }}" = "audit" ]; then
+          gitguard audit "${{ inputs.path }}" \
+            --output "$OUTPUT_FILE" \
+            --format sarif || EXIT_CODE=$?
+        fi
+
+        if [ -f "$OUTPUT_FILE" ]; then
+          FINDINGS=$(python3 -c "
+        import json
+        with open('$OUTPUT_FILE') as f:
+            data = json.load(f)
+        count = sum(len(run.get('results', [])) for run in data.get('runs', []))
+        print(count)
+        " 2>/dev/null || echo "0")
+
+          CRITICAL=$(python3 -c "
+        import json
+        with open('$OUTPUT_FILE') as f:
+            data = json.load(f)
+        count = sum(1 for run in data.get('runs', []) for r in run.get('results', []) if r.get('level') == 'error')
+        print(count)
+        " 2>/dev/null || echo "0")
+
+          echo "findings=$FINDINGS" >> $GITHUB_OUTPUT
+          echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
+          echo "high=$CRITICAL" >> $GITHUB_OUTPUT
+          echo "sarif-file=$OUTPUT_FILE" >> $GITHUB_OUTPUT
+        else
+          echo "findings=0" >> $GITHUB_OUTPUT
+          echo "critical=0" >> $GITHUB_OUTPUT
+          echo "high=0" >> $GITHUB_OUTPUT
+          echo "sarif-file=" >> $GITHUB_OUTPUT
+        fi
+
+        if [ -n "${{ inputs.fail-on-severity }}" ]; then
+          SEVERITY_LEVEL="${{ inputs.fail-on-severity }}"
+          case $SEVERITY_LEVEL in
+            critical)
+              if [ "$CRITICAL" -gt 0 ]; then
+                echo "Critical findings detected, failing workflow"
+                exit 1
+              fi
+              ;;
+            high)
+              if [ "$CRITICAL" -gt 0 ]; then
+                echo "High/Critical findings detected, failing workflow"
+                exit 1
+              fi
+              ;;
+          esac
+        fi
+
+        exit $EXIT_CODE
+
+    - name: Upload SARIF
+      if: inputs.output-format == 'sarif' && steps.scan.outputs.sarif-file != ''
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ steps.scan.outputs.sarif-file }}
+        category: gitguard
+      continue-on-error: true
