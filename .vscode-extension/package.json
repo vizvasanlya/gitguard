@@ -1,0 +1,116 @@
+{
+  "name": "gitguard",
+  "displayName": "GitGuard - Security Scanner",
+  "description": "AI-powered git security scanner that detects secrets, vulnerabilities, and fixes your code",
+  "version": "0.1.0",
+  "publisher": "gitguard",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Security",
+    "Linters",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "security",
+    "secrets",
+    "vulnerabilities",
+    "scanner",
+    "git",
+    "AI"
+  ],
+  "activationEvents": [
+    "onLanguage:python",
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "onLanguage:go",
+    "onLanguage:rust",
+    "onLanguage:java",
+    "onLanguage:ruby",
+    "onLanguage:php"
+  ],
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "gitguard.scan",
+        "title": "GitGuard: Scan File"
+      },
+      {
+        "command": "gitguard.scanProject",
+        "title": "GitGuard: Scan Project"
+      },
+      {
+        "command": "gitguard.fix",
+        "title": "GitGuard: Auto-Fix Issues"
+      },
+      {
+        "command": "gitguard.explain",
+        "title": "GitGuard: Explain Finding"
+      },
+      {
+        "command": "gitguard.history",
+        "title": "GitGuard: Scan Git History"
+      }
+    ],
+    "configuration": {
+      "title": "GitGuard",
+      "properties": {
+        "gitguard.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable GitGuard scanning"
+        },
+        "gitguard.scanOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Scan files on save"
+        },
+        "gitguard.severityThreshold": {
+          "type": "string",
+          "default": "low",
+          "enum": [
+            "critical",
+            "high",
+            "medium",
+            "low",
+            "info"
+          ],
+          "description": "Minimum severity to show"
+        },
+        "gitguard.autoFix": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically fix issues on save"
+        },
+        "gitguard.aiReview": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable AI-powered code review"
+        }
+      }
+    },
+    "languages": [
+      {
+        "id": "gitguard-findings",
+        "aliases": [
+          "GitGuard Findings",
+          "gitguard"
+        ],
+        "extensions": [
+          ".gitguard"
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "lint": "eslint src",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "eslint": "^8.50.0"
+  }
+}

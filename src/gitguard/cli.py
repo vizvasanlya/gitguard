@@ -440,5 +440,73 @@ def explain(finding_rule: str, context: str) -> None:
     console.print(Panel(explanation, title=f"Rule: {finding_rule}", border_style="cyan"))
 
 
+@main.command()
+@click.argument("path", default=".")
+@click.option("--format", "-f", "output_format", type=click.Choice(["cyclonedx", "spdx"]), default="cyclonedx")
+@click.option("--output", "-o", type=click.Path(), help="Output file path")
+def sbom(path: str, output_format: str, output: str | None) -> None:
+    """Generate Software Bill of Materials (SBOM)."""
+    from gitguard.core.sbom import SBOMGenerator
+
+    generator = SBOMGenerator(path)
+
+    if output_format == "cyclonedx":
+        content = generator.generate_cyclonedx()
+    else:
+        content = generator.generate_spdx()
+
+    if output:
+        Path(output).write_text(content)
+        formatter.print_success(f"SBOM saved to {output}")
+    else:
+        console.print(content)
+
+
+@main.command()
+@click.argument("path", default=".")
+@click.option("--port", "-p", default=8080, help="Dashboard port")
+def dashboard(path: str, port: int) -> None:
+    """Launch web dashboard for security overview."""
+    from gitguard.dashboard.server import DashboardServer
+
+    server = DashboardServer(path, port=port)
+    server.start()
+
+
+@main.command()
+@click.argument("path", default=".")
+@click.option("--output", "-o", type=click.Path(), help="Output JSON results")
+def nvd(path: str, output: str | None) -> None:
+    """Check dependencies against NVD vulnerability database."""
+    from gitguard.core.nvd import NVDChecker
+
+    checker = NVDChecker()
+    project_path = Path(path)
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Checking NVD database...", total=None)
+        findings = checker.check_project(project_path)
+        progress.update(task, description="NVD check complete!")
+
+    if output:
+        output_data = [f.to_dict() for f in findings]
+        Path(output).write_text(json.dumps(output_data, indent=2))
+        formatter.print_success(f"Results saved to {output}")
+
+    if not findings:
+        formatter.print_success("No known CVEs found in dependencies!")
+    else:
+        console.print(f"\n[bold red]Found {len(findings)} CVEs:[/bold red]\n")
+        for finding in findings:
+            color = formatter.SEVERITY_COLORS.get(finding.severity, "white")
+            console.print(f"  [{color}]{finding.message}[/{color}]")
+            if finding.suggestion:
+                console.print(f"    [green]{finding.suggestion}[/green]")
+
+
 if __name__ == "__main__":
     main()
