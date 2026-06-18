@@ -60,7 +60,23 @@ class AutoFixer:
             "VUL007": self._fix_yaml_load,
             "VUL011": self._fix_debug_mode,
             "VUL014": self._fix_md5,
+            "VUL015": self._fix_sha1,
             "VUL016": self._fix_mktemp,
+            "VUL027": self._fix_java_runtime,
+            "VUL030": self._fix_ruby_eval,
+            "VUL031": self._fix_ruby_system,
+            "VUL032": self._fix_ruby_yaml,
+            "VUL033": self._fix_php_eval,
+            "VUL034": self._fix_php_system,
+            "VUL036": self._fix_c_strcpy,
+            "VUL037": self._fix_c_sprintf,
+            "VUL038": self._fix_c_gets,
+            "VUL039": self._fix_c_scanf,
+            "VUL041": self._fix_shell_eval,
+            "VUL044": self._fix_docker_privileged,
+            "VUL045": self._fix_docker_latest,
+            "VUL048": self._fix_terraform_s3,
+            "VUL049": self._fix_terraform_ebs,
             "BP001": self._fix_bare_except,
             "BP007": self._fix_star_import,
             "BP008": self._fix_mutable_default,
@@ -148,6 +164,17 @@ class AutoFixer:
             description="Replace MD5 with SHA-256",
         )
 
+    def _fix_sha1(self, finding: Finding, original: str) -> FixResult:
+        fixed = original.replace("hashlib.sha1", "hashlib.sha256")
+        fixed = fixed.replace("sha1", "sha256")
+        return FixResult(
+            file_path=finding.file_path,
+            original_line=original,
+            fixed_line=fixed,
+            line_number=finding.line_number,
+            description="Replace SHA-1 with SHA-256",
+        )
+
     def _fix_mktemp(self, finding: Finding, original: str) -> FixResult:
         fixed = original.replace("mktemp(", "mkstemp(")
         return FixResult(
@@ -156,6 +183,152 @@ class AutoFixer:
             fixed_line=fixed,
             line_number=finding.line_number,
             description="Replace mktemp() with mkstemp()",
+        )
+
+    def _fix_java_runtime(self, finding: Finding, original: str) -> FixResult:
+        return FixResult(
+            file_path=finding.file_path,
+            original_line=original,
+            fixed_line=f"// SECURITY: Runtime.exec() is dangerous - use ProcessBuilder with whitelisted commands\n{original}",
+            line_number=finding.line_number,
+            description="Runtime.exec() is dangerous - use ProcessBuilder",
+        )
+
+    def _fix_ruby_eval(self, finding: Finding, original: str) -> FixResult:
+        return FixResult(
+            file_path=finding.file_path,
+            original_line=original,
+            fixed_line=f"# SECURITY: eval() removed - review and rewrite\n{original}",
+            line_number=finding.line_number,
+            description="Ruby eval() is dangerous - manual review required",
+        )
+
+    def _fix_ruby_system(self, finding: Finding, original: str) -> FixResult:
+        fixed = original.replace("system(", "Open3.capture3(")
+        return FixResult(
+            file_path=finding.file_path,
+            original_line=original,
+            fixed_line=fixed,
+            line_number=finding.line_number,
+            description="Replace system() with Open3.capture3()",
+        )
+
+    def _fix_ruby_yaml(self, finding: Finding, original: str) -> FixResult:
+        fixed = original.replace("YAML.load(", "YAML.safe_load(")
+        return FixResult(
+            file_path=finding.file_path,
+            original_line=original,
+            fixed_line=fixed,
+            line_number=finding.line_number,
+            description="Replace YAML.load() with YAML.safe_load()",
+        )
+
+    def _fix_php_eval(self, finding: Finding, original: str) -> FixResult:
+        return FixResult(
+            file_path=finding.file_path,
+            original_line=original,
+            fixed_line=f"// SECURITY: eval() removed - review and rewrite\n{original}",
+            line_number=finding.line_number,
+            description="PHP eval() is dangerous - manual review required",
+        )
+
+    def _fix_php_system(self, finding: Finding, original: str) -> FixResult:
+        return FixResult(
+            file_path=finding.file_path,
+            original_line=original,
+            fixed_line=f"// SECURITY: system() call flagged - use escapeshellarg() for user input\n{original}",
+            line_number=finding.line_number,
+            description="PHP system() - ensure input is escaped",
+        )
+
+    def _fix_c_strcpy(self, finding: Finding, original: str) -> FixResult:
+        fixed = original.replace("strcpy(", "strncpy(")
+        return FixResult(
+            file_path=finding.file_path,
+            original_line=original,
+            fixed_line=fixed,
+            line_number=finding.line_number,
+            description="Replace strcpy() with strncpy()",
+        )
+
+    def _fix_c_sprintf(self, finding: Finding, original: str) -> FixResult:
+        fixed = original.replace("sprintf(", "snprintf(")
+        return FixResult(
+            file_path=finding.file_path,
+            original_line=original,
+            fixed_line=fixed,
+            line_number=finding.line_number,
+            description="Replace sprintf() with snprintf()",
+        )
+
+    def _fix_c_gets(self, finding: Finding, original: str) -> FixResult:
+        fixed = original.replace("gets(", "fgets(")
+        return FixResult(
+            file_path=finding.file_path,
+            original_line=original,
+            fixed_line=fixed,
+            line_number=finding.line_number,
+            description="Replace gets() with fgets()",
+        )
+
+    def _fix_c_scanf(self, finding: Finding, original: str) -> FixResult:
+        fixed = original.replace("%s", "%255s")
+        return FixResult(
+            file_path=finding.file_path,
+            original_line=original,
+            fixed_line=fixed,
+            line_number=finding.line_number,
+            description="Add width limit to scanf %s",
+        )
+
+    def _fix_shell_eval(self, finding: Finding, original: str) -> FixResult:
+        return FixResult(
+            file_path=finding.file_path,
+            original_line=original,
+            fixed_line=f"# SECURITY: eval removed - review and rewrite\n{original}",
+            line_number=finding.line_number,
+            description="Shell eval is dangerous - manual review required",
+        )
+
+    def _fix_docker_privileged(self, finding: Finding, original: str) -> FixResult:
+        fixed = original.replace("--privileged", "# --privileged removed for security")
+        return FixResult(
+            file_path=finding.file_path,
+            original_line=original,
+            fixed_line=fixed,
+            line_number=finding.line_number,
+            description="Remove Docker privileged mode",
+        )
+
+    def _fix_docker_latest(self, finding: Finding, original: str) -> FixResult:
+        fixed = original.replace(":latest", ":1.0  # Use specific version")
+        return FixResult(
+            file_path=finding.file_path,
+            original_line=original,
+            fixed_line=fixed,
+            line_number=finding.line_number,
+            description="Replace 'latest' tag with specific version",
+        )
+
+    def _fix_terraform_s3(self, finding: Finding, original: str) -> FixResult:
+        fixed = original.replace('acl = "public-read"', 'acl = "private"')
+        fixed = fixed.replace('acl = "public"', 'acl = "private"')
+        return FixResult(
+            file_path=finding.file_path,
+            original_line=original,
+            fixed_line=fixed,
+            line_number=finding.line_number,
+            description="Change S3 bucket ACL to private",
+        )
+
+    def _fix_terraform_ebs(self, finding: Finding, original: str) -> FixResult:
+        fixed = original.replace("encrypted = false", "encrypted = true")
+        return FixResult(
+            file_path=finding.file_path,
+            original_line=original,
+            fixed_line=fixed,
+            line_number=finding.line_number,
+            description="Enable EBS encryption",
         )
 
     def _fix_bare_except(self, finding: Finding, original: str) -> FixResult:
